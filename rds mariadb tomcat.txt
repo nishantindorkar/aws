@@ -1,0 +1,82 @@
+#use same vpc and security group for rds and instance
+
+#create vpc 
+create vpc -> vpc-one 10.0.0.0/16
+create subnet ->  1.public-subnet 10.0.1.0/24   2.private-subnet 10.0.2.0/24
+create internet gateway igw -> attach vpc-one
+create route -> subnet association (attach both subnets)
+edit route -> add -> 0.0.0.0/0 igw 
+
+#create rds 
+service -> rds -> databases -> create database
+standard create -> mariadb
+Master username : admin
+Master password : Admin$123
+Virtual private cloud (VPC) : vpc-one
+VPC security group (firewall) -> create new -> vpc-one-sg
+Additional configuration -> Database options : studentapp
+
+*add below ports after create instance -> click on database -> click on Security VPC security groups -> inbound rule
+ 
+http 80
+mysql/aurora 3306
+custom tcp 8080
+ssh 22
+
+#create instance
+Amazon Linux
+Network settings -> edit -> 
+vpc : vpv-one
+subnet : public-subnet
+Auto-assign public IP : enable
+Select existing security group : vpc-one-sg
+
+#go to git bash
+ssh -i key.pem ec2-user@public ip of instance
+yum update
+yum install mariadb -y
+mysql -h database-1.cl77p3lwlrcp.us-east-1.rds.amazonaws.com -u admin -p
+CREATE DATABASE studentapp;
+use studentapp;
+CREATE TABLE if not exists students(student_id INT NOT NULL AUTO_INCREMENT,
+	student_name VARCHAR(100) NOT NULL,
+    student_addr VARCHAR(100) NOT NULL,
+	student_age VARCHAR(3) NOT NULL,
+	student_qual VARCHAR(20) NOT NULL,
+	student_percent VARCHAR(10) NOT NULL,
+	student_year_passed VARCHAR(10) NOT NULL,
+	PRIMARY KEY (student_id)
+);
+describe students;
+exit 
+
+#install tomcat only from below link (no updated version will work on with this project)
+cd /mnt
+wget https://dlcdn.apache.org/tomcat/tomcat-8/v8.5.83/bin/apache-tomcat-8.5.83.tar.gz
+tar -xvzf apache-tomcat-8.5.83.tar.gz
+
+yum install java-1.8.0-openjdk-src.x86_64 -y
+
+cd /mnt/apache-tomcat-8.5.83/webapps/
+wget https://s3-us-west-2.amazonaws.com/studentapi-cit/student.war
+cd /mnt/apache-tomcat-8.5.83/lib/
+wget https://s3-us-west-2.amazonaws.com/studentapi-cit/mysql-connector.jar
+cd /mnt/apache-tomcat-8.5.83/conf/
+sudo vim context.xml
+        at line no.21->  exact below <Context>
+        <Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource"
+                           maxTotal="500" maxIdle="30" maxWaitMillis="1000"
+                           username="admin" password="Admin$123" driverClassName="com.mysql.jdbc.Driver"
+                           url="jdbc:mysql://database-1.cl77p3lwlrcp.us-east-1.rds.amazonaws.com:3306/studentapp?useUnicode=yes&amp;characterEncoding=utf8"/>       
+
+cd /mnt/apache-tomcat-8.5.83/bin/
+./catalina.sh stop
+./catalina.sh start
+
+<instance public ip>:8080/student/  #go to browser and enter into address bar
+ 
+
+
+create a user in mariadb
+1]CREATE USER 'modi'@'%' IDENTIFIED BY 'modi$123';
+2]GRANT SELECT ON *.* TO 'modi'@'%';
