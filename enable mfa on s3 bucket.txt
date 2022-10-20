@@ -1,0 +1,11 @@
+Multi-factor authentication (MFA) delete enable on bucket
+#Enabled MFA can not be permite to delete bucket, so Disabled it and delete the bucket
+
+aws --version
+aws configure
+aws configure list
+aws s3api get-bucket-versioning  --bucket bucket-name
+#profile -> Security credentials -> Multi-factor authentication (MFA) and authenticate (use serial number from mfa and code from google authentication)
+aws s3api put-bucket-versioning --bucket bucket-name --versioning-configuration Status=Enabled,MFADelete=Enabled --mfa "arn:aws:iam::729967097653:mfa/root-account-mfa-device 667846"
+#for Disabling
+aws s3api put-bucket-versioning --bucket bucket-name --versioning-configuration Status=Enabled,MFADelete=Disabled --mfa "arn:aws:iam::729967097653:mfa/root-account-mfa-device 756704" --region=ap-south-1
