@@ -1,0 +1,43 @@
+#allow to see bucket to user1
+1.login into nishant account
+2.create one group (name : mygroup) and then attach policy to group -> EC2 ReadOnlyAccess
+3.create two IAM users in it (user1 & user2) & add both users to the group
+4.login to second account,i.e rushi account
+5.create one s3 bucket
+6.create a role -> AWS account (Another AWS account) -> Insert Account ID of nishant
+-> attach policy -> s3ReadOnlyAccess -> role name : s3read
+7.Now login back to nishant account click on 'mygroup' (in IAM ) -> Permission -> create Inline policy Select
+-> AWS security token service (search sts) -> Assume Role ->Resources :Any in this account (*)
+click on Add statement -> create Policy
+8.Now login as IAM user1
+9.switch Role(below account name switch role option is available) 
+-> account : account number of rushi 
+-> role : s3read
+-> Now check wheather you are able to see the bucket of another account or not
+* #ERROR : untill provide admin access above windows don't proceed forword *
+#step 10 allow to see bucket on both users (user1 & user2)
+10.Repeat step 8 & 9 but with user2 
+#remove permission to access bucket by user2 from following steps 
+11.Now login into rushi account -> role -> trust relationship -> Edit trust policy -> paste ARN of user1 ("AWS": "arn:aws:iam::729967097653:user/user1")-> update policy
+12.Now login again in user1 -> switch role -> test s3 bucket
+13.Now login as user2 -> switch role -> you will get error
+
+*********************************************************************
+
+Type of trusted Entity (Role)
+1.AWS service
+2.AWS account
+3.web Identity
+4.SAML 2.0 federation
+5.Custom trust policy
+
+*********************************************************************
+nishant
+729967097653
+https://729967097653.signin.aws.amazon.com/console
+
+rushi
+423323398872
+arn:aws:iam::423323398872:user/rushikesh
+
+arn:aws:iam::423323398872:role/s3read
