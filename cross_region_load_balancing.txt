@@ -1,0 +1,9 @@
+#> vpc, subnet, igw, route, ec2 instance with nginx in mumbai region
+#> vpc, subnet, igw, route, ec2 instance with nginx in tokyo region
+#> route 53-> create health check -> name : check1, IP address: {mumbai instance public ip} Advanced configuration: Request interval: Fast (10 seconds)
+   Failure threshold : 2, Health checker regions : Use recommended, create alarm: no -> create health check [DO SAME PROCESS ALSO FOR TOKYO REGION]
+#> Hosted zones -> Create hosted zone -> Domain name : nishantblogs.ml -> create record -> Record type : A -routes traffic to an IPv4, Value : {mumbai instance public ip}, 
+   TTL (seconds) : 1, Routing policy : Weighted, Weight:50, Health check ID : check1, Record ID : MY MUMBAI SERVER [DO SAME PROCESS ALSO FOR TOKYO REGION]
+#> make another record-> Record name : www, Record type : A -routes traffic to an IPv4, Alias : ON, Route traffic to : Alias to another record in this hosted zone, select domain name 
+   from below nishantblogs.ml. , Routing policy : Simple routing ->  save
+#> enter domain name in browser. DONE.
