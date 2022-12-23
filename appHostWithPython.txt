@@ -1,0 +1,19 @@
+APPLICATION HOST WITH PYTHON 
+
+--> launch ubuntu instance with security rule 8502
+--> install the following commands 
+sudo su
+apt update
+apt install git
+git clone https://github.com/Spidy20/InNews.git
+cd InNews
+apt install pip 
+python3 -m pip install -r requirements.txt
+
+python3 -m streamlit run App.py
+
+nohup python3 -m streamlit run App.py #[Close Terminal, app will run as a service for permanent]
+
+# Stop Application
+ps -ef (Get process ID from here)
+kill [id]

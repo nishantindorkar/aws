@@ -1,0 +1,16 @@
+* Application Host on notejs
+
+--> launce ec2 instance with port 3100 and follow the commands
+curl -sL https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.0/install.sh -o install_nvm.sh
+bash install_nvm.sh
+nvm install 16.0.0
+nvm --version
+node --version
+sudo yum update -y
+sudo yum install git -y
+git clone https://github.com/sumant-mishra/node-app.git
+cd node-app
+npm install
+node index.js
+ 
+--> Now can access application using both Public IP ex:3.94.62.246:3100
