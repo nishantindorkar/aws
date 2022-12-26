@@ -1,0 +1,38 @@
+--> Download AWS CLI and Install and put aws configure (First test your Access)
+--> create role with following process
+	-> make trust-policy.json file and add following data
+		{
+		   "Version": "2012-10-17",
+		   "Statement": [
+			  {
+				 "Effect": "Allow",
+				 "Principal": { "Service": "vmie.amazonaws.com" },
+				 "Action": "sts:AssumeRole",
+				 "Condition": {
+					"StringEquals":{
+					   "sts:Externalid": "vmimport"
+					}
+				 }
+			  }
+		   ]
+		}
+		     
+		** Also attach policies with AmazonS3FullAccess and VMImportExportRoleForAWSConnector
+	* Now run this command to cmd (all our work is process in the cmd) : aws iam create-role --role-name vmimport --assume-role-policy-document "file://import\trust-policy.json"
+--> go to vmware virtual machine export ovf 
+--> make s3 bucket and upload .vmdk file 
+--> make file name with containers.json and paste following data into it
+		[
+		  {
+			"Description": "My Server OVA",
+			"Format": "vmdk",
+			"UserBucket": {
+				"S3Bucket": "bucketName",
+				"S3Key": "vmdk file name"
+			}
+		  }
+		]
+	* NOW run this command : aws ec2 import-image --description "My server VM" --disk-containers "file://containers.json"
+
+--> wait for some time untill all status active check the status with this command : 	aws ec2 describe-import-image-tasks --import-task-ids import-ami-1234567890abcdef0
+--> go to AMI and lauch the instance with same hostname and password is same which you give to your VM MAchine. eg ssh nishant@instancePublicIP password: nishant
