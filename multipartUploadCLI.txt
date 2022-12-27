@@ -1,0 +1,33 @@
+--> Create an S3 bucket (objects can be public)
+--> go to perticular directiory with sudo permission and fire following commands
+->aws configure 
+->split -b 12M video.mp4
+->ls
+->aws s3api create-multipart-upload --bucket multipartuploadnishantbucket --key video.mp4    #copy uploadid and paste in notepad
+->aws s3api upload-part --bucket multipartuploadnishantbucket --key video.mp4 --part-number 1 --body xaa --upload-id
+  xe6bGr6wGV4EwLTf5tSSaZ6vkBUnVQ2.oYq8auimEnjpEheqi6EZd5aMUP5cWJo8Pj.Ig973yAnFC7NVvTJLX0zW_nVJRSjFkiiuRFxGCQFPQZpp2xb.QSs0GIgBif5_   #Now repeat the above CLI command for each chunk file [Replace --part-number & --body values with the above table values]
+->aws s3api list-parts --bucket multipartuploadnishantbucket --key video.mp4 --upload-id
+  xe6bGr6wGV4EwLTf5tSSaZ6vkBUnVQ2.oYq8auimEnjpEheqi6EZd5aMUP5cWJo8Pj.Ig973yAnFC7NVvTJLX0zW_nVJRSjFkiiuRFxGCQFPQZpp2xb.QSs0GIgBif5_  #list of part copy and paste in list.json file leave only PartNumber and ETag save the file
+->aws s3api complete-multipart-upload --multipart-upload file://list.json --bucket multipartuploadnishantbucket --key video.mp4 --upload-id 
+  xe6bGr6wGV4EwLTf5tSSaZ6vkBUnVQ2.oYq8auimEnjpEheqi6EZd5aMUP5cWJo8Pj.Ig973yAnFC7NVvTJLX0zW_nVJRSjFkiiuRFxGCQFPQZpp2xb.QSs0GIgBif5_
+ 
+--> here we successfully splitted and uploaded the multiple individual parts.
+
+video.mp4 = file name
+multipartuploadnishantbucket = bucket name
+xe6bGr6wGV4EwLTf5tSSaZ6vkBUnVQ2.oYq8auimEnjpEheqi6EZd5aMUP5cWJo8Pj.Ig973yAnFC7NVvTJLX0zW_nVJRSjFkiiuRFxGCQFPQZpp2xb.QSs0GIgBif5_ = upload id
+
+
+# sample list.json file
+{
+    "Parts": [
+        {
+            "PartNumber": 1,
+            "ETag": "\"4b7518dde5dd4c2f213748ad72a497a0\""
+        },
+        {
+            "PartNumber": 2,
+            "ETag": "\"ffd845696a36dafe56631635e401a556\""
+        }
+    ]
+}
