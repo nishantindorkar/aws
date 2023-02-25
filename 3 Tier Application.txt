@@ -1,0 +1,139 @@
+* create vpc :
+    name : vpc-one : 10.0.0.0/16
+
+* create subnet :
+    public-subnet-1 : 10.0.1.0/24 : (1a) 
+    public-subnet-2 : 10.0.2.0/24 : (1b) 
+    web-private-subnet-1 : 10.0.3.0/24 : (1a) 
+    web-private-subnet-2 : 10.0.4.0/24 : (1b) 
+    app-private-subnet-1 : 10.0.5.0/24 : (1a) 
+    app-private-subnet-1 : 10.0.6.0/24 : (1b)
+	database-subnet : 10.0.7.0/24 : (1a)
+	
+* create internet gateway :
+    name : igw-one
+    attach -> vpc-one
+
+* create nat gateway :  
+    name : nat-one
+    subnet : public-subnet-1 #to give access of internet
+    connectivity type : public
+    elastic IP allocation ID : allocate elastic IP
+
+* create route table :
+    name : public-route -> associated : public-subnet-1 and public-subnet-2 -> route -> igw-one 0.0.0.0/0
+    name : private-route -> associated : web-private-subnet-1&2, app-private-subnet-1&2 and database-subnet -> route -> nat-one 0.0.0.0/0
+
+* add below ports after create instance -> click on database -> click on Security VPC security groups -> inbound rule
+ 
+http 80
+mysql/aurora 3306
+custom tcp 8080
+ssh 22
+
+* create EC2 instance for bash and host 
+
+name : public-instance-1(jump server)
+vpc : vpc-one 
+subnet : public-subnet-1
+Auto-assign public IP : enable
+Select existing security group : one-SG
+
+* create EC2 instance for web (use same procedure for web-instance-2)
+name : web-instance-1
+vpc : vpc-one 
+subnet : web-private-subnet-1
+Auto-assign public IP : disable
+Select existing security group : one-SG
+
+user data:
+#!/bin/bash
+sudo yum update -y
+sudo amazon-linux-extras install nginx1 -y     
+systemctl start nginx
+systemctl enable nginx
+
+* create EC2 instance for app (use same procedure for app-instance-2)
+name : app-instance-1
+vpc : vpc-one 
+subnet : app-private-subnet-1
+Auto-assign public IP : disable
+Select existing security group : one-SG
+
+user data:
+#!/bin/bash
+sudo wget https://dlcdn.apache.org/tomcat/tomcat-8/v8.5.86/bin/apache-tomcat-8.5.86.tar.gz
+sudo tar -xvzf apache-tomcat-8.5.86.tar.gz
+sudo yum install java-1.8.0-openjdk-src.x86_64 -y
+sudo cd apache-tomcat-8.5.86.tar.gz/webapps/
+sudo curl -O https://s3-us-west-2.amazonaws.com/studentapi-cit/student.war
+sudo cd apache-tomcat-8.5.86.tar.gz/lib/
+sudo curl -O https://s3-us-west-2.amazonaws.com/studentapi-cit/mysql-connector.jar
+sudo cd apache-tomcat-8.5.86.tar.gz/bin/
+sudo ./catalina.sh stop
+sudo ./catalina.sh start
+
+* create load balancer (alb) Name: nginxlb -> Scheme: internet facing -> Network mapping(vpc-one), Mappings (select both regions with public-subnet-1 and public-subnet-2) -> select 	created security group : one-SG -> Listener HTTP:80 -> create load balances
+  - create target group -> name: nginxtg ->  Protocol: http port: 80 -> select created vpc -> select both public-instance-1 and public-instance-2
+
+* create load balancer (alb) Name: tomcatlb -> Scheme: Internal -> Network mapping(vpc-one), Mappings (select both regions with web-instance-1 and web-instance-2) -> select created security group : one-SG -> Listener HTTP:80 -> create load balances
+  - create target group -> name: tomcattg ->  Protocol: http port: 8080 -> select created vpc -> select both app-instance-1 and app-instance-2
+  
+* login to jump server that is public-instance-1 
+ - send private key to login other private instances with below command 
+	- sudo scp -i allPurposeVirginia.pem allPurposeVirginia.pem ec2-user@54.227.91.102:/home/ec2-user
+
+ - login to web-instance-1 (use same procedure for web-instance-2)
+  - vim /etc/nginx/nginx.conf  (use below script at line number 38 to 44 (other lines added to remember the error no need to add into the script))
+   server {
+        listen       80;
+        listen       [::]:80;
+        server_name  _;
+        location / {
+        proxy_pass http://internal-tomcatlb-11803762.us-east-1.elb.amazonaws.com/student/;
+        }
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+
+    #    error_page 404 /404.html;              |
+     #   location = /404.html {                 |    <---- This should be commented
+      #  }                                      |
+	  
+	  
+* create EC2 instance for database
+name : database-instance
+vpc : vpc-one 
+subnet : database-subnet
+Auto-assign public IP : disable
+Select existing security group : one-SG
+
+ - login through jump server and do as following
+	yum install mariadb -y
+    mysql -h database-1.ccbjod0ijwud.us-east-1.rds.amazonaws.com -u admin -p 
+    CREATE DATABASE studentapp;
+    use studentapp;
+    CREATE TABLE if not exists students(student_id INT NOT NULL AUTO_INCREMENT,
+        student_name VARCHAR(100) NOT NULL,
+        student_addr VARCHAR(100) NOT NULL,
+        student_age VARCHAR(3) NOT NULL,
+        student_qual VARCHAR(20) NOT NULL,
+        student_percent VARCHAR(10) NOT NULL,
+        student_year_passed VARCHAR(10) NOT NULL,
+        PRIMARY KEY (student_id)
+    );
+    describe students;
+    exit 
+	
+
+* go to app instances (both tomcat app)
+vim vim apache-tomcat-8.5.86/conf/context.xml
+<Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource"
+          maxTotal="500" maxIdle="30" maxWaitMillis="1000"
+          username="admin" password="Admin$123" driverClassName="com.mysql.jdbc.Driver"
+          url="jdbc:mysql://database-1.ccbjod0ijwud.us-east-1.rds.amazonaws.com:3306/studentapp?useUnicode=yes&amp;characterEncoding=utf8"/>
+
+./apache-tomcat-8.5.86/bin/catalina.sh stop
+./apache-tomcat-8.5.86/bin/catalina.sh start	  
+
+* hit the dns of nginxlb load balancer 
