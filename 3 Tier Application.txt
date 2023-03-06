@@ -74,7 +74,7 @@ sudo ./catalina.sh stop
 sudo ./catalina.sh start
 
 * create load balancer (alb) Name: nginxlb -> Scheme: internet facing -> Network mapping(vpc-one), Mappings (select both regions with public-subnet-1 and public-subnet-2) -> select 	created security group : one-SG -> Listener HTTP:80 -> create load balances
-  - create target group -> name: nginxtg ->  Protocol: http port: 80 -> select created vpc -> select both public-instance-1 and public-instance-2
+  - create target group -> name: nginxtg ->  Protocol: http port: 80 -> select created vpc -> select both web-instance-1 and web-instance-2
 
 * create load balancer (alb) Name: tomcatlb -> Scheme: Internal -> Network mapping(vpc-one), Mappings (select both regions with web-instance-1 and web-instance-2) -> select created security group : one-SG -> Listener HTTP:80 -> create load balances
   - create target group -> name: tomcattg ->  Protocol: http port: 8080 -> select created vpc -> select both app-instance-1 and app-instance-2
